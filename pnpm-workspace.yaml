@@ -62,6 +62,8 @@ autoInstallPeers: true
 
 onlyBuiltDependencies:
   - esbuild
+  - '@google/genai'
+  - protobufjs
 
 overrides:
   # Keep esbuild at a consistent version across all packages
