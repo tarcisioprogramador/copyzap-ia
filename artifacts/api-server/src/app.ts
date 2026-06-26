@@ -40,7 +40,7 @@ const isProduction = process.env.NODE_ENV === "production";
 if (isProduction) {
   const frontendDist = path.resolve(__dirname, "..", "..", "copyzap", "dist");
   app.use(express.static(frontendDist));
-  app.get("*", (_req, res) => {
+  app.get("/{*path}", (_req, res) => {
     res.sendFile(path.join(frontendDist, "index.html"));
   });
   logger.info({ frontendDist }, "Serving frontend from static build");
