@@ -19,8 +19,8 @@ COPY artifacts/api-server/package.json artifacts/api-server/
 COPY artifacts/copyzap/package.json artifacts/copyzap/
 COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/
 
-# Install dependencies
-RUN pnpm install --no-frozen-lockfile
+# Install dependencies (ignore build scripts to avoid interactive prompts in Docker)
+RUN pnpm install --no-frozen-lockfile --ignore-scripts
 
 # Copy source files
 COPY . .
