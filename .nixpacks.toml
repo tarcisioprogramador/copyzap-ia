@@ -1,0 +1,5 @@
+[phases.install]
+cmds = ["npm i -g pnpm", "pnpm install"]
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "pnpm"]
