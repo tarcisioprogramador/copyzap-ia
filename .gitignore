@@ -57,3 +57,5 @@ Thumbs.db
 # Replit artifacts
 .replitignore
 .replit-artifact/
+
+.vercel
