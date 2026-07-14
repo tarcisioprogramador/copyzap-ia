@@ -69,12 +69,13 @@
 }
 
 :root, .dark {
-  /* Futuristic sales cockpit — cyber green + deep space */
-  --background: 222 47% 4%;
-  --foreground: 210 40% 98%;
+  /* DARK MODE EXCLUSIVE VIBE - Trading Panel / Weapon of Sales */
+  --background: 240 6% 6%; /* Deep dark gray, almost black */
+  --foreground: 0 0% 98%;
   
-  --primary: 158 64% 52%;
-  --primary-foreground: 158 90% 8%;
+  /* The "Green" for closed deals */
+  --primary: 152 69% 45%; 
+  --primary-foreground: 152 90% 10%;
   
   --secondary: 240 5% 15%;
   --secondary-foreground: 0 0% 98%;
@@ -88,11 +89,11 @@
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 220 20% 14%;
-  --input: 220 20% 12%;
-  --ring: 158 64% 52%;
+  --border: 240 5% 15%;
+  --input: 240 5% 15%;
+  --ring: 152 69% 45%;
 
-  --card: 222 40% 7%;
+  --card: 240 6% 8%;
   --card-foreground: 0 0% 98%;
   --card-border: 240 5% 15%;
 
@@ -145,31 +146,34 @@
     @apply font-sans antialiased bg-background text-foreground selection:bg-primary selection:text-primary-foreground;
   }
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: hsl(var(--background));
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--primary) / 0.3);
-    border-radius: 3px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--primary) / 0.5);
+  input, textarea, select {
+    @apply outline-none;
   }
 }
 
 @layer utilities {
-  .glow-primary {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.15), 0 0 40px hsl(var(--primary) / 0.05);
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
   }
 
-  .text-glow {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted));
+    border-radius: 3px;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }

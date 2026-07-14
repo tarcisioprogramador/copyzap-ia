@@ -1,14 +1,47 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import path from "path";
-import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 const app: Express = express();
+
+// Rate limiting (simple in-memory)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 30; // requests per window
+
+function rateLimit(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    next();
+    return;
+  }
+
+  record.count++;
+  if (record.count > RATE_LIMIT_MAX) {
+    res.status(429).json({ error: "Muitas requisições. Tente novamente em 1 minuto." });
+    return;
+  }
+  next();
+}
+
+// Cleanup rate limit map every 5 minutes
+const rateLimitCleanupInterval = setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitMap) {
+    if (now > value.resetTime) rateLimitMap.delete(key);
+  }
+}, 5 * 60 * 1000);
+
+// Prevent the interval from keeping the process alive
+if (rateLimitCleanupInterval.unref) {
+  rateLimitCleanupInterval.unref();
+}
 
 app.use(
   pinoHttp({
@@ -29,21 +62,20 @@ app.use(
     },
   }),
 );
-app.use(cors());
-app.use(express.json());
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true,
+}));
+
+app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", router);
+// Apply rate limit to all API routes
+app.use("/api", rateLimit);
 
-// Serve built frontend in production
-const isProduction = process.env.NODE_ENV === "production";
-if (isProduction) {
-  const frontendDist = path.resolve(__dirname, "..", "..", "copyzap", "dist");
-  app.use(express.static(frontendDist));
-  app.get("/{*path}", (_req, res) => {
-    res.sendFile(path.join(frontendDist, "index.html"));
-  });
-  logger.info({ frontendDist }, "Serving frontend from static build");
-}
+app.use("/api", router);
 
 export default app;

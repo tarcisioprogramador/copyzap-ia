@@ -31,7 +31,7 @@ export async function getOrCreateConversation(phoneNumber: string, contactName: 
   const existingConversations = await db
     .select()
     .from(conversations)
-    .where(eq(conversations.title, `WhatsApp - ${phoneNumber}`))
+    .where(eq(conversations.title, `wa:${phoneNumber}`))
     .limit(1);
 
   if (existingConversations.length > 0) {
@@ -42,7 +42,7 @@ export async function getOrCreateConversation(phoneNumber: string, contactName: 
   const [newConversation] = await db
     .insert(conversations)
     .values({
-      title: `WhatsApp - ${phoneNumber}`,
+      title: `wa:${phoneNumber}`,
     })
     .returning();
 

@@ -2,16 +2,20 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: CopyZap AI - WhatsApp Sales Copy Generator API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
   - name: copies
     description: Copy generation operations
+  - name: ai
+    description: Advanced AI features
 paths:
   /healthz:
     get:
@@ -27,26 +31,100 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register new user
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already exists
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      description: Authenticate user and get token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      description: Returns the authenticated user's data
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
   /copies:
     get:
       operationId: listCopies
       tags: [copies]
       summary: List generated copies
-      description: Returns all previously generated copies
+      description: Returns paginated list of copies for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 50
       responses:
         "200":
-          description: List of copies
+          description: Paginated list of copies
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Copy"
+                $ref: "#/components/schemas/PaginatedCopies"
     post:
       operationId: generateCopy
       tags: [copies]
       summary: Generate a copy with AI
       description: Uses AI to generate a WhatsApp sales message
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -60,12 +138,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Copy"
+        "429":
+          description: Daily limit reached
 
   /copies/{id}:
     delete:
       operationId: deleteCopy
       tags: [copies]
       summary: Delete a copy
+      security:
+        - bearerAuth: []
       parameters:
         - name: id
           in: path
@@ -81,7 +163,9 @@ paths:
       operationId: getCopyStats
       tags: [copies]
       summary: Get copy statistics
-      description: Returns counts per message type and recent activity
+      description: Returns counts per message type and recent activity for the user
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: Stats
@@ -90,47 +174,79 @@ paths:
               schema:
                 $ref: "#/components/schemas/CopyStats"
 
-  /copies/analytics:
-    get:
-      operationId: getCopyAnalytics
-      tags: [copies]
-      summary: Get response rate analytics
-      description: Returns response rates grouped by message type
-      responses:
-        "200":
-          description: Analytics
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CopyAnalytics"
-
-  /copies/{id}/outcome:
-    patch:
-      operationId: updateCopyOutcome
-      tags: [copies]
-      summary: Update copy outcome
-      description: Mark a copy as sent, responded, or no response
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+  /ai/seller-mode:
+    post:
+      operationId: sellerMode
+      tags: [ai]
+      summary: AI Seller Mode
+      description: Describe a client scenario, AI responds as a human seller
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CopyOutcomeInput"
+              $ref: "#/components/schemas/SellerModeInput"
       responses:
-        "200":
-          description: Updated copy
+        "201":
+          description: Generated seller response
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Copy"
+                $ref: "#/components/schemas/AIResponse"
+
+  /ai/improve-copy:
+    post:
+      operationId: improveCopy
+      tags: [ai]
+      summary: Improve a copy
+      description: Paste a message and AI makes it more persuasive
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImproveCopyInput"
+      responses:
+        "201":
+          description: Improved copy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImprovedCopyResponse"
+
+  /ai/follow-up:
+    post:
+      operationId: generateFollowUp
+      tags: [ai]
+      summary: Generate follow-up message
+      description: Generate a follow-up message for a lead that went cold
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FollowUpInput"
+      responses:
+        "201":
+          description: Generated follow-up
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowUpResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     HealthStatus:
       type: object
@@ -140,10 +256,69 @@ components:
       required:
         - status
 
+    RegisterInput:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    LoginInput:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required:
+        - user
+        - token
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - plan
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        plan:
+          type: string
+          enum: [free, pro]
+
     Copy:
       type: object
       required:
         - id
+        - userId
         - clientName
         - product
         - messageType
@@ -151,6 +326,8 @@ components:
         - createdAt
       properties:
         id:
+          type: integer
+        userId:
           type: integer
         clientName:
           type: string
@@ -168,22 +345,8 @@ components:
           enum: [profissional, amigavel, direto, emocional]
         generatedText:
           type: string
-        outcome:
-          type: ["string", "null"]
-          enum: [sent, responded, no_response, null]
-        outcomeAt:
-          type: ["string", "null"]
         createdAt:
           type: string
-
-    CopyOutcomeInput:
-      type: object
-      required:
-        - outcome
-      properties:
-        outcome:
-          type: string
-          enum: [sent, responded, no_response]
 
     CopyInput:
       type: object
@@ -209,6 +372,25 @@ components:
           type: string
           enum: [profissional, amigavel, direto, emocional]
 
+    PaginatedCopies:
+      type: object
+      required:
+        - copies
+        - total
+        - page
+        - limit
+      properties:
+        copies:
+          type: array
+          items:
+            $ref: "#/components/schemas/Copy"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
     CopyStats:
       type: object
       required:
@@ -225,61 +407,101 @@ components:
         todayCount:
           type: integer
 
-    TypeAnalytics:
+    SellerModeInput:
       type: object
       required:
-        - total
-        - sent
-        - responded
-        - noResponse
-        - pending
-        - responseRate
+        - clientDescription
+        - product
       properties:
-        total:
-          type: integer
-        sent:
-          type: integer
-        responded:
-          type: integer
-        noResponse:
-          type: integer
-        pending:
-          type: integer
-        responseRate:
-          type: number
+        clientDescription:
+          type: string
+          minLength: 10
+        product:
+          type: string
+          minLength: 1
+        context:
+          type: string
 
-    CopyAnalyticsOverall:
+    AIResponse:
       type: object
       required:
-        - total
-        - sent
-        - responded
-        - noResponse
-        - pending
-        - responseRate
+        - id
+        - generatedText
+        - createdAt
       properties:
-        total:
+        id:
           type: integer
-        sent:
-          type: integer
-        responded:
-          type: integer
-        noResponse:
-          type: integer
-        pending:
-          type: integer
-        responseRate:
-          type: number
+        generatedText:
+          type: string
+        createdAt:
+          type: string
 
-    CopyAnalytics:
+    ImproveCopyInput:
       type: object
       required:
-        - overall
-        - byType
+        - originalMessage
       properties:
-        overall:
-          $ref: "#/components/schemas/CopyAnalyticsOverall"
-        byType:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/TypeAnalytics"
+        originalMessage:
+          type: string
+          minLength: 10
+        goal:
+          type: string
+          enum: [venda, profissional, amigavel, urgencia, emocional]
+        additionalInstructions:
+          type: string
+
+    ImprovedCopyResponse:
+      type: object
+      required:
+        - id
+        - originalText
+        - improvedText
+        - createdAt
+      properties:
+        id:
+          type: integer
+        originalText:
+          type: string
+        improvedText:
+          type: string
+        createdAt:
+          type: string
+
+    FollowUpInput:
+      type: object
+      required:
+        - clientName
+        - product
+        - lastInteraction
+        - daysSinceLastContact
+      properties:
+        clientName:
+          type: string
+        product:
+          type: string
+        lastInteraction:
+          type: string
+          minLength: 5
+        daysSinceLastContact:
+          type: integer
+          minimum: 0
+        previousOutcome:
+          type: string
+          enum: [interested, no_response, objection, ghosted]
+
+    FollowUpResponse:
+      type: object
+      required:
+        - id
+        - generatedText
+        - followUpStrategy
+        - createdAt
+      properties:
+        id:
+          type: integer
+        generatedText:
+          type: string
+        followUpStrategy:
+          type: string
+        createdAt:
+          type: string

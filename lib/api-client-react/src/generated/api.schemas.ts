@@ -41,23 +41,7 @@ export interface Copy {
   messageType: CopyMessageType;
   tone?: CopyTone;
   generatedText: string;
-  /** @nullable */
-  outcome?: CopyOutcome | null;
-  /** @nullable */
-  outcomeAt?: string | null;
   createdAt: string;
-}
-
-export type CopyOutcome = typeof CopyOutcome[keyof typeof CopyOutcome];
-
-export const CopyOutcome = {
-  sent: 'sent',
-  responded: 'responded',
-  no_response: 'no_response',
-} as const;
-
-export interface CopyOutcomeInput {
-  outcome: CopyOutcome;
 }
 
 export type CopyInputMessageType = typeof CopyInputMessageType[keyof typeof CopyInputMessageType];
@@ -100,28 +84,42 @@ export interface CopyStats {
   todayCount: number;
 }
 
-export interface TypeAnalytics {
+export interface PaginatedCopies {
+  copies: Copy[];
   total: number;
-  sent: number;
-  responded: number;
-  noResponse: number;
-  pending: number;
-  responseRate: number;
+  page: number;
+  limit: number;
 }
 
-export type CopyAnalyticsByType = {[key: string]: TypeAnalytics};
-
-export interface CopyAnalyticsOverall {
-  total: number;
-  sent: number;
-  responded: number;
-  noResponse: number;
-  pending: number;
-  responseRate: number;
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  plan: string;
 }
 
-export interface CopyAnalytics {
-  overall: CopyAnalyticsOverall;
-  byType: CopyAnalyticsByType;
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+export interface AIResponse {
+  id: number;
+  generatedText: string;
+  createdAt: string;
+}
+
+export interface ImprovedCopyResponse {
+  id: number;
+  originalText: string;
+  improvedText: string;
+  createdAt: string;
+}
+
+export interface FollowUpResponse {
+  id: number;
+  generatedText: string;
+  followUpStrategy: string;
+  createdAt: string;
 }
 

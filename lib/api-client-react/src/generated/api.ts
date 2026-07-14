@@ -21,11 +21,10 @@ import type {
 
 import type {
   Copy,
-  CopyAnalytics,
   CopyInput,
-  CopyOutcomeInput,
   CopyStats,
-  HealthStatus
+  HealthStatus,
+  PaginatedCopies
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -130,9 +129,9 @@ export const getListCopiesUrl = () => {
  * Returns all previously generated copies
  * @summary List generated copies
  */
-export const listCopies = async ( options?: RequestInit): Promise<Copy[]> => {
+export const listCopies = async ( options?: RequestInit): Promise<PaginatedCopies> => {
 
-  return customFetch<Copy[]>(getListCopiesUrl(),
+  return customFetch<PaginatedCopies>(getListCopiesUrl(),
   {
     ...options,
     method: 'GET'
@@ -409,78 +408,6 @@ export function useGetCopyStats<TData = Awaited<ReturnType<typeof getCopyStats>>
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
-
-export const getGetCopyAnalyticsUrl = () => {
-  return `/api/copies/analytics`
-}
-
-export const getCopyAnalytics = async ( options?: RequestInit): Promise<CopyAnalytics> => {
-  return customFetch<CopyAnalytics>(getGetCopyAnalyticsUrl(),
-  {
-    ...options,
-    method: 'GET'
-  }
-);}
-
-export const getGetCopyAnalyticsQueryKey = () => {
-    return [`/api/copies/analytics`] as const;
-}
-
-export const getGetCopyAnalyticsQueryOptions = <TData = Awaited<ReturnType<typeof getCopyAnalytics>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCopyAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-const {query: queryOptions, request: requestOptions} = options ?? {};
-  const queryKey =  queryOptions?.queryKey ?? getGetCopyAnalyticsQueryKey();
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCopyAnalytics>>> = ({ signal }) => getCopyAnalytics({ signal, ...requestOptions });
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCopyAnalytics>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export function useGetCopyAnalytics<TData = Awaited<ReturnType<typeof getCopyAnalytics>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCopyAnalytics>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetCopyAnalyticsQueryOptions(options)
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-export const getUpdateCopyOutcomeUrl = (id: number,) => {
-  return `/api/copies/${id}/outcome`
-}
-
-export const updateCopyOutcome = async (id: number, copyOutcomeInput: CopyOutcomeInput, options?: RequestInit): Promise<Copy> => {
-  return customFetch<Copy>(getUpdateCopyOutcomeUrl(id),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(copyOutcomeInput,)
-  }
-);}
-
-export const getUpdateCopyOutcomeMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCopyOutcome>>, TError,{id: number;data: BodyType<CopyOutcomeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof updateCopyOutcome>>, TError,{id: number;data: BodyType<CopyOutcomeInput>}, TContext> => {
-const mutationKey = ['updateCopyOutcome'];
-const {mutation: mutationOptions, request: requestOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateCopyOutcome>>, {id: number;data: BodyType<CopyOutcomeInput>}> = (props) => {
-          const {id, data} = props ?? {};
-          return  updateCopyOutcome(id, data, requestOptions)
-        }
-  return  { mutationFn, ...mutationOptions }}
-
-export const useUpdateCopyOutcome = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateCopyOutcome>>, TError,{id: number;data: BodyType<CopyOutcomeInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
- ): UseMutationResult<
-        Awaited<ReturnType<typeof updateCopyOutcome>>,
-        TError,
-        {id: number;data: BodyType<CopyOutcomeInput>},
-        TContext
-      > => {
-      return useMutation(getUpdateCopyOutcomeMutationOptions(options));
-    }
 
 
 

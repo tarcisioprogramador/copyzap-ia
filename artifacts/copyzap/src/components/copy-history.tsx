@@ -1,54 +1,49 @@
-import { Copy, useListCopies } from "@workspace/api-client-react";
+import { useListCopies } from "@workspace/api-client-react";
 import { CopyCard } from "./copy-card";
-import { MessageSquarePlus, Sparkles } from "lucide-react";
+import { Terminal } from "lucide-react";
 
 export function CopyHistory({ latestCopyId }: { latestCopyId?: number }) {
-  const { data: copies, isLoading } = useListCopies();
+  const { data: response, isLoading } = useListCopies();
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className="h-48 rounded-lg bg-card/50 border border-border/50 animate-pulse"
-            style={{ animationDelay: `${i * 150}ms` }}
-          />
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-48 rounded bg-card/50 border border-border animate-pulse" />
         ))}
       </div>
     );
   }
 
-  if (!copies || copies.length === 0) {
+  // Handle both old (array) and new (paginated) response formats
+  const copies = Array.isArray(response)
+    ? response
+    : response?.copies ?? [];
+
+  if (copies.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-primary/20 rounded-xl bg-card/20 backdrop-blur-sm">
-        <div className="w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 glow-primary">
-          <MessageSquarePlus className="w-7 h-7 text-primary" />
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded bg-card/20">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+          <Terminal className="w-6 h-6 text-muted-foreground" />
         </div>
-        <p className="text-foreground font-display font-semibold text-lg">Nenhuma copy ainda</p>
-        <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-          Preencha o formulário ao lado e clique em{" "}
-          <span className="text-primary font-mono text-xs">Gerar Copy com IA</span> para criar sua primeira mensagem de vendas.
-        </p>
-        <div className="flex items-center gap-1.5 mt-4 text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-          <Sparkles className="w-3 h-3 text-primary" />
-          IA treinada em técnicas de conversão
-        </div>
+        <p className="text-muted-foreground font-mono text-sm uppercase tracking-wider">Nenhum registro operacional encontrado.</p>
+        <p className="text-xs text-muted-foreground mt-2 font-mono">Suas armas de vendas aparecerão aqui.</p>
       </div>
     );
   }
 
-  const displayCopies = copies.filter((c) => c.id !== latestCopyId);
+  // Filter out the latest copy if it's already displayed at the top
+  const displayCopies = copies.filter(c => c.id !== latestCopyId);
 
   return (
     <div className="space-y-4">
-      {displayCopies.map((copy) => (
+      {displayCopies.map(copy => (
         <CopyCard key={copy.id} copy={copy} />
       ))}
-
+      
       {displayCopies.length === 0 && latestCopyId && (
-        <p className="text-xs text-muted-foreground font-mono text-center py-6 border border-dashed border-border/50 rounded-lg">
-          Sua copy mais recente está destacada acima.
+        <p className="text-xs text-muted-foreground font-mono text-center pt-8">
+          Apenas a operação atual está em andamento.
         </p>
       )}
     </div>

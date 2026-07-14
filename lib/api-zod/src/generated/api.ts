@@ -30,8 +30,6 @@ export const ListCopiesResponseItem = zod.object({
   "messageType": zod.enum(['venda', 'followup', 'urgencia', 'posVenda', 'objecao']),
   "tone": zod.enum(['profissional', 'amigavel', 'direto', 'emocional']).optional(),
   "generatedText": zod.string(),
-  "outcome": zod.enum(['sent', 'responded', 'no_response']).nullish(),
-  "outcomeAt": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const ListCopiesResponse = zod.array(ListCopiesResponseItem)
@@ -71,33 +69,6 @@ export const GetCopyStatsResponse = zod.object({
   "total": zod.number(),
   "byType": zod.record(zod.string(), zod.number()),
   "todayCount": zod.number()
-})
-
-export const GetCopyAnalyticsResponse = zod.object({
-  "overall": zod.object({
-    "total": zod.number(),
-    "sent": zod.number(),
-    "responded": zod.number(),
-    "noResponse": zod.number(),
-    "pending": zod.number(),
-    "responseRate": zod.number(),
-  }),
-  "byType": zod.record(zod.string(), zod.object({
-    "total": zod.number(),
-    "sent": zod.number(),
-    "responded": zod.number(),
-    "noResponse": zod.number(),
-    "pending": zod.number(),
-    "responseRate": zod.number(),
-  })),
-})
-
-export const UpdateCopyOutcomeParams = zod.object({
-  "id": zod.coerce.number()
-})
-
-export const UpdateCopyOutcomeBody = zod.object({
-  "outcome": zod.enum(['sent', 'responded', 'no_response'])
 })
 
 

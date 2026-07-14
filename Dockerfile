@@ -10,7 +10,6 @@ COPY .npmrc ./
 COPY lib/db/package.json lib/db/
 COPY lib/api-zod/package.json lib/api-zod/
 COPY lib/api-client-react/package.json lib/api-client-react/
-COPY lib/integrations-anthropic-ai/package.json lib/integrations-anthropic-ai/
 COPY lib/api-spec/package.json lib/api-spec/
 COPY scripts/package.json scripts/
 
@@ -19,14 +18,14 @@ COPY artifacts/api-server/package.json artifacts/api-server/
 COPY artifacts/copyzap/package.json artifacts/copyzap/
 COPY artifacts/mockup-sandbox/package.json artifacts/mockup-sandbox/
 
-# Install dependencies (ignore build scripts to avoid interactive prompts in Docker)
+# Install dependencies
 RUN pnpm install --no-frozen-lockfile --ignore-scripts
 
 # Copy source files
 COPY . .
 
-# Build the project
+# Build the api-server and libs
 RUN pnpm run build:production
 
-# Start the server
-CMD ["pnpm", "run", "start:production"]
+# Run DB migrations on start (drizzle-kit push)
+CMD ["sh", "-c", "pnpm --filter @workspace/db run push && pnpm run start:production"]
