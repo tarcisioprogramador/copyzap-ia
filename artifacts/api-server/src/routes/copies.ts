@@ -147,12 +147,20 @@ router.post("/copies", authMiddleware, async (req: AuthRequest, res) => {
   const userId = req.user!.id;
 
   // Check usage limit
-  const { allowed, remaining } = await canGenerateCopy(userId);
-  if (!allowed) {
-    res.status(429).json({
-      error: "Limite diário atingido",
-      message: "Você atingiu o limite do seu plano. Faça upgrade para o Pro!",
-    });
+  let remaining: number;
+  try {
+    const limitCheck = await canGenerateCopy(userId);
+    if (!limitCheck.allowed) {
+      res.status(429).json({
+        error: "Limite diário atingido",
+        message: "Você atingiu o limite do seu plano. Faça upgrade para o Pro!",
+      });
+      return;
+    }
+    remaining = limitCheck.remaining;
+  } catch (err) {
+    req.log.error({ err }, "Failed to check usage limit");
+    res.status(500).json({ error: "Erro ao verificar limite de uso" });
     return;
   }
 
@@ -170,8 +178,12 @@ router.post("/copies", authMiddleware, async (req: AuthRequest, res) => {
 
     const completion = await groq.chat.completions.create({
       model: "llama-3.3-70b-versatile",
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        { role: "system", content: "Você é um especialista em copywriting para vendas pelo WhatsApp no Brasil. Responda sempre em português brasileiro." },
+        { role: "user", content: prompt },
+      ],
       max_tokens: 512,
+      temperature: 0.85,
     });
 
     const generatedText = completion.choices[0]?.message?.content?.trim() ?? "";
@@ -211,8 +223,7 @@ router.post("/copies", authMiddleware, async (req: AuthRequest, res) => {
     });
   } catch (err: unknown) {
     req.log.error({ err }, "Failed to generate copy");
-    const msg = err instanceof Error ? err.message : "Erro ao gerar copy com IA";
-    res.status(502).json({ error: msg });
+    res.status(502).json({ error: "Erro ao gerar copy com IA. Tente novamente." });
   }
 });
 
@@ -225,9 +236,15 @@ router.delete("/copies/:id", authMiddleware, async (req: AuthRequest, res) => {
 
   try {
     const userId = req.user!.id;
-    await db
+    const deleted = await db
       .delete(copiesTable)
-      .where(and(eq(copiesTable.id, parsed.data.id), eq(copiesTable.userId, userId)));
+      .where(and(eq(copiesTable.id, parsed.data.id), eq(copiesTable.userId, userId)))
+      .returning({ id: copiesTable.id });
+
+    if (deleted.length === 0) {
+      res.status(404).json({ error: "Cópia não encontrada" });
+      return;
+    }
     res.status(204).end();
   } catch (err) {
     req.log.error({ err }, "Failed to delete copy");

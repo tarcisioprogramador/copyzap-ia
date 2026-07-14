@@ -58,10 +58,12 @@ export function GeneratorForm({ onGenerated }: { onGenerated: (copy: Copy) => vo
         if (err && typeof err === "object") {
           const e = err as { response?: { data?: { error?: string } }; message?: string };
           const apiMsg = e?.response?.data?.error;
-          if (apiMsg?.toLowerCase().includes("credit") || apiMsg?.toLowerCase().includes("balance")) {
-            description = "Saldo insuficiente na Anthropic. Adicione créditos em console.anthropic.com/settings/billing e tente novamente.";
+          if (apiMsg?.toLowerCase().includes("limite")) {
+            description = "Você atingiu o limite diário. Faça upgrade para Pro!";
           } else if (apiMsg) {
             description = apiMsg;
+          } else if (e?.message) {
+            description = e.message;
           }
         }
         toast({

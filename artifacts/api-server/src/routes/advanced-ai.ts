@@ -31,7 +31,14 @@ router.post("/ai/seller-mode", authMiddleware, async (req: AuthRequest, res) => 
   }
 
   const userId = req.user!.id;
-  const { allowed } = await canGenerateCopy(userId);
+
+  let allowed: boolean;
+  try {
+    const limitCheck = await canGenerateCopy(userId);
+    allowed = limitCheck.allowed;
+  } catch {
+    allowed = false;
+  }
   if (!allowed) {
     res.status(429).json({ error: "Limite diário atingido. Faça upgrade para Pro!" });
     return;
@@ -98,8 +105,7 @@ INSTRUÇÕES:
     });
   } catch (err) {
     req.log.error({ err }, "Failed seller mode generation");
-    const msg = err instanceof Error ? err.message : "Erro ao gerar resposta";
-    res.status(502).json({ error: msg });
+    res.status(502).json({ error: "Erro ao gerar resposta. Tente novamente." });
   }
 });
 
@@ -118,7 +124,14 @@ router.post("/ai/improve-copy", authMiddleware, async (req: AuthRequest, res) =>
   }
 
   const userId = req.user!.id;
-  const { allowed } = await canGenerateCopy(userId);
+
+  let allowed: boolean;
+  try {
+    const limitCheck = await canGenerateCopy(userId);
+    allowed = limitCheck.allowed;
+  } catch {
+    allowed = false;
+  }
   if (!allowed) {
     res.status(429).json({ error: "Limite diário atingido. Faça upgrade para Pro!" });
     return;
@@ -198,8 +211,7 @@ Escreva APENAS a mensagem melhorada, sem explicações ou introdução.`;
     });
   } catch (err) {
     req.log.error({ err }, "Failed to improve copy");
-    const msg = err instanceof Error ? err.message : "Erro ao melhorar copy";
-    res.status(502).json({ error: msg });
+    res.status(502).json({ error: "Erro ao melhorar copy. Tente novamente." });
   }
 });
 
@@ -220,7 +232,14 @@ router.post("/ai/follow-up", authMiddleware, async (req: AuthRequest, res) => {
   }
 
   const userId = req.user!.id;
-  const { allowed } = await canGenerateCopy(userId);
+
+  let allowed: boolean;
+  try {
+    const limitCheck = await canGenerateCopy(userId);
+    allowed = limitCheck.allowed;
+  } catch {
+    allowed = false;
+  }
   if (!allowed) {
     res.status(429).json({ error: "Limite diário atingido. Faça upgrade para Pro!" });
     return;
@@ -299,8 +318,7 @@ Escreva APENAS a mensagem de follow-up, pronta para enviar.`;
     });
   } catch (err) {
     req.log.error({ err }, "Failed follow-up generation");
-    const msg = err instanceof Error ? err.message : "Erro ao gerar follow-up";
-    res.status(502).json({ error: msg });
+    res.status(502).json({ error: "Erro ao gerar follow-up. Tente novamente." });
   }
 });
 

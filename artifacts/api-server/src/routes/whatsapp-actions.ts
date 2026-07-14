@@ -5,6 +5,7 @@ import { sendTextMessage } from "../lib/whatsapp";
 import { db, conversations, messages } from "@workspace/db";
 import { logger } from "../lib/logger";
 import Groq from "groq-sdk";
+import { authMiddleware, AuthRequest } from "../lib/middleware";
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const SendMessageSchema = z.object({
 });
 
 // POST /whatsapp/send - Enviar mensagem proativa para um lead
-router.post("/whatsapp/send", async (req, res) => {
+router.post("/whatsapp/send", authMiddleware, async (req: AuthRequest, res) => {
   const parsed = SendMessageSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error });
@@ -56,13 +57,12 @@ router.post("/whatsapp/send", async (req, res) => {
     res.json({ success: true, messageId: result.messages?.[0]?.id });
   } catch (err) {
     req.log.error({ err, phoneNumber }, "Failed to send proactive WhatsApp message");
-    const msg = err instanceof Error ? err.message : "Erro ao enviar mensagem WhatsApp";
-    res.status(502).json({ error: msg });
+    res.status(502).json({ error: "Erro ao enviar mensagem WhatsApp. Tente novamente." });
   }
 });
 
 // POST /whatsapp/generate-and-send - Gerar copy com IA e enviar para lead
-router.post("/whatsapp/generate-and-send", async (req, res) => {
+router.post("/whatsapp/generate-and-send", authMiddleware, async (req: AuthRequest, res) => {
   const bodySchema = z.object({
     phoneNumber: z.string().min(1),
     clientName: z.string().min(1, "Nome do cliente é obrigatório"),
@@ -148,8 +148,7 @@ REGRAS:
     });
   } catch (err) {
     req.log.error({ err, phoneNumber }, "Failed to generate and send WhatsApp message");
-    const msg = err instanceof Error ? err.message : "Erro ao gerar/enviar mensagem";
-    res.status(502).json({ error: msg });
+    res.status(502).json({ error: "Erro ao gerar/enviar mensagem. Tente novamente." });
   }
 });
 

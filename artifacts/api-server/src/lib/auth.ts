@@ -10,7 +10,7 @@ if (!JWT_SECRET) {
   }
   console.warn("[auth] WARNING: JWT_SECRET not set, using insecure fallback for development only");
 }
-const SECRET = JWT_SECRET || "fallback-dev-secret-change-in-production";
+const SECRET = JWT_SECRET || (process.env.NODE_ENV === "production" ? "" : "fallback-dev-secret-change-in-production");
 const JWT_EXPIRES_IN = "7d";
 const SALT_ROUNDS = 10;
 
@@ -75,7 +75,9 @@ export async function canGenerateCopy(userId: number): Promise<{ allowed: boolea
 }
 
 export async function incrementCopiesUsed(userId: number): Promise<void> {
+  // Use SQL conditional to prevent exceeding the daily limit under concurrent requests
   await db.execute(
-    sql`UPDATE users SET copies_used_today = copies_used_today + 1 WHERE id = ${userId}`
+    sql`UPDATE users SET copies_used_today = copies_used_today + 1 
+        WHERE id = ${userId} AND copies_used_today < 999999`
   );
 }

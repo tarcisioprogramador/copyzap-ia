@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS "copies" (
   "created_at" timestamp NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS "copies_user_id_idx" ON "copies" ("user_id");
+CREATE INDEX IF NOT EXISTS "copies_created_at_idx" ON "copies" ("created_at");
+CREATE INDEX IF NOT EXISTS "copies_user_created_idx" ON "copies" ("user_id", "created_at");
+
 CREATE TABLE IF NOT EXISTS "conversations" (
   "id" SERIAL PRIMARY KEY,
   "title" text NOT NULL,

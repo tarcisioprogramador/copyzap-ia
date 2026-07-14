@@ -28,15 +28,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("copyzap_token");
-    const storedUser = localStorage.getItem("copyzap_user");
+    try {
+      const stored = localStorage.getItem("copyzap_token");
+      const storedUser = localStorage.getItem("copyzap_user");
 
-    if (stored && storedUser) {
-      setToken(stored);
-      setUser(JSON.parse(storedUser));
-      setAuthTokenGetter(() => stored);
+      if (stored && storedUser) {
+        const parsed = JSON.parse(storedUser);
+        if (parsed && typeof parsed === "object" && parsed.id && parsed.email) {
+          setToken(stored);
+          setUser(parsed);
+          setAuthTokenGetter(() => stored);
+        } else {
+          localStorage.removeItem("copyzap_token");
+          localStorage.removeItem("copyzap_user");
+        }
+      }
+    } catch {
+      localStorage.removeItem("copyzap_token");
+      localStorage.removeItem("copyzap_user");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

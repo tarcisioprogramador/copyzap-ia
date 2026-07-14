@@ -26,27 +26,38 @@ interface MessageHistory {
 }
 
 export async function getOrCreateConversation(phoneNumber: string, contactName: string): Promise<number> {
-  // Check if there's an existing conversation for this phone number
-  // Since we don't have a phone field on conversations, we use a title-based lookup
+  const conversationTitle = `wa:${phoneNumber}`;
+
+  // Try to find existing conversation first
   const existingConversations = await db
     .select()
     .from(conversations)
-    .where(eq(conversations.title, `wa:${phoneNumber}`))
+    .where(eq(conversations.title, conversationTitle))
     .limit(1);
 
   if (existingConversations.length > 0) {
     return existingConversations[0].id;
   }
 
-  // Create new conversation
-  const [newConversation] = await db
-    .insert(conversations)
-    .values({
-      title: `wa:${phoneNumber}`,
-    })
-    .returning();
-
-  return newConversation.id;
+  // Create new conversation — handle race condition gracefully
+  try {
+    const [newConversation] = await db
+      .insert(conversations)
+      .values({ title: conversationTitle })
+      .returning();
+    return newConversation.id;
+  } catch (err) {
+    // If insert failed (unique constraint race), retry the select
+    const retry = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.title, conversationTitle))
+      .limit(1);
+    if (retry.length > 0) {
+      return retry[0].id;
+    }
+    throw err;
+  }
 }
 
 export async function saveMessage(
@@ -86,7 +97,6 @@ async function generateAIResponse(
   userMessage: string,
   history: MessageHistory[],
 ): Promise<string> {
-  // Dynamic import to avoid top-level Groq SDK loading
   const Groq = (await import("groq-sdk")).default;
 
   if (!process.env.GROQ_API_KEY) {
@@ -97,10 +107,14 @@ async function generateAIResponse(
 
   const productInfo = buildProductInfo();
 
+  // Build messages array — avoid duplicate user messages.
+  // History already includes the current user message (saved before calling this function),
+  // so we only append history and do NOT add userMessage again.
   const messages_list = [
-    { role: "system" as const, content: SYSTEM_PROMPT },
-    { role: "system" as const, content: `INFORMAÇÕES DO NEGÓCIO:\n${productInfo}` },
-    ...history.map((m) => ({
+    { role: "system" as const, content: `${SYSTEM_PROMPT}\n\nINFORMAÇÕES DO NEGÓCIO:\n${productInfo}` },
+    // History already contains the user's latest message at the end, so we exclude it from history
+    // and pass it explicitly as the final user message.
+    ...history.slice(0, -1).map((m) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     })),
