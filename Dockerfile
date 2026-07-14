@@ -28,4 +28,4 @@ COPY . .
 RUN pnpm run build:production
 
 # Run DB migrations on start (drizzle-kit push)
-CMD ["sh", "-c", "pnpm --filter @workspace/db run push-force && pnpm run start:production"]
+CMD ["sh", "-c", "pnpm --filter @workspace/scripts run db-init && pnpm run start:production"]
