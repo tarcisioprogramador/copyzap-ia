@@ -3,11 +3,6 @@
 import pg from "pg";
 
 const SQL = `
-DROP TABLE IF EXISTS "messages" CASCADE;
-DROP TABLE IF EXISTS "copies" CASCADE;
-DROP TABLE IF EXISTS "conversations" CASCADE;
-DROP TABLE IF EXISTS "users" CASCADE;
-
 CREATE TABLE IF NOT EXISTS "users" (
   "id" SERIAL PRIMARY KEY,
   "name" varchar(255) NOT NULL,
