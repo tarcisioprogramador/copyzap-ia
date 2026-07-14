@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd artifacts/copyzap && pnpm install --frozen-lockfile && pnpm run build",
+  "installCommand": "npm i -g pnpm@11 && pnpm install --no-frozen-lockfile",
+  "buildCommand": "pnpm --filter @workspace/copyzap run build",
   "outputDirectory": "artifacts/copyzap/dist/public",
-  "installCommand": "npm i -g pnpm && pnpm install --frozen-lockfile",
   "framework": null,
   "rewrites": [
     {
